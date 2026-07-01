@@ -1,5 +1,5 @@
 """
-A program that takes a directory path (not recursively) and returns:
+A program that scans a directory path (not recursively) and returns:
 1) Number of files
 2) Number of folders
 3) Total size of all files
