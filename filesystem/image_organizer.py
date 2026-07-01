@@ -2,6 +2,7 @@
 A program that copies image files from a directory into a directory called 'Img'
 
 Img directory will be located at the user folder
+Files that already exist will not be copied again
 Names of the files that were copied will be printed out
 """
 
