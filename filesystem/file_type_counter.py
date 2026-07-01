@@ -15,8 +15,7 @@ def count_ext(path):
             counter[ext] += 1
     return counter
 
-
-if __name__ == '__main__':
+def main():
     path = Path(input('Enter full directory path: '))
 
     if not path.exists() or not path.is_dir():
@@ -27,3 +26,7 @@ if __name__ == '__main__':
 
     for ext, count in counter.most_common():           # Sorted by frequency
         print(f'{ext}: {count}')
+
+
+if __name__ == '__main__':
+    main()
