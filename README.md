@@ -6,3 +6,4 @@
 - File Type Counter
 - Image Organizer
 - Directory Tree Printer
+- Duplicate Finder
