@@ -5,3 +5,4 @@
 - Directory Inspector
 - File Type Counter
 - Image Organizer
+- Directory Tree Printer
