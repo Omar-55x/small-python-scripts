@@ -7,3 +7,4 @@
 - Image Organizer
 - Directory Tree Printer
 - Duplicate Finder
+- Backup Utility
