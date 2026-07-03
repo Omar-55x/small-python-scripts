@@ -69,8 +69,8 @@ def gather_files(path):
 def move_files(files, path):
     for file in files:
         extension = file.suffix.lower()
-        catergory = EXTENSIONS.get(extension, 'Others')
-        dest = path / catergory / file.name
+        category = EXTENSIONS.get(extension, 'Others')
+        dest = path / category / file.name
 
         if dest.exists():
             handle_duplicates(file, dest)
