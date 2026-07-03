@@ -8,3 +8,4 @@
 - Directory Tree Printer
 - Duplicate Finder
 - Backup Utility
+- Mini File Organizer
