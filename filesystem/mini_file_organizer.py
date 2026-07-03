@@ -15,6 +15,33 @@ CATEGORY_DIRS = [
     "Others",
 ]
 
+EXTENSIONS = {
+    ".jpg": "Images",
+    ".jpeg": "Images",
+    ".png": "Images",
+    ".gif": "Images",
+    ".webp": "Images",
+
+    ".pdf": "Documents",
+    ".doc": "Documents",
+    ".docx": "Documents",
+    ".txt": "Documents",
+    ".ppt": "Documents",
+    ".pptx": "Documents",
+    ".xls": "Documents",
+    ".xlsx": "Documents",
+
+    ".mp4": "Videos",
+    ".avi": "Videos",
+    ".mkv": "Videos",
+    ".mov": "Videos",
+
+    ".zip": "Archives",
+    ".rar": "Archives",
+    ".7z": "Archives",
+    ".tar": "Archives",
+    ".gz": "Archives",
+}
 
 def validate_path(prompt):
     while True:
@@ -30,29 +57,20 @@ def validate_path(prompt):
 
 # Make category directories
 def make_dirs(path):
-    for dir in CATEGORY_DIRS:
-        if not path.joinpath(dir).exists():
-            path.joinpath(dir).mkdir()
+    for category in CATEGORY_DIRS:
+        if not path.joinpath(category).exists():
+            path.joinpath(category).mkdir()
 
 # Get paths for all files
 def gather_files(path):
-    files = [p for p in path.iterdir() if p.is_file()]
-    return files
+    return [p for p in path.iterdir() if p.is_file()]
 
 # Move files to the right directory based on its extension
 def move_files(files, path):
     for file in files:
-        match file.suffix.lower():
-            case '.pdf' | '.doc' | '.docx' | '.txt' | '.ppt' | '.pptx' | '.xls' | '.xlsx':
-                dest = path / 'Documents' / file.name
-            case '.jpg' | '.png' | '.gif' | '.jpeg' | '.webp':
-                dest = path / 'Images' / file.name
-            case '.mp4' | '.mkv' | '.avi' | '.mov':
-                dest = path / 'Videos' / file.name
-            case '.zip' | '.rar' | '.7z' | '.tar' | '.gz':
-                dest = path / 'Archives' / file.name
-            case _:
-                dest = path / 'Others' / file.name
+        extension = file.suffix.lower()
+        catergory = EXTENSIONS.get(extension, 'Others')
+        dest = path / catergory / file.name
 
         if dest.exists():
             handle_duplicates(file, dest)
