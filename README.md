@@ -1,8 +1,21 @@
-# Table of Contents
-- A description for each script is included on top of the code
+# About the repository
+
+This repository contains a collection of Python automation scripts and mini-projects as I practice automation, data processing, and scripting.
+
+The goal is to progressively develop practical skills by implementing small, focused programs before applying those concepts to larger projects.
+
+The repository is organized by topic, with each category focusing on a specific area of Python automation. The exercises gradually increase in complexity, from small utility scripts to more complete projects.
+
+# Topics Covered
+**Note:** A description for each script is provided at the very top of the script
 
 ## filesystem
-- Directory Inspector
+
+### Focus:
+- Working with files and directories using Python's `pathlib` and `shutil` modules.
+
+### Projects:
+- Directory Inspector  
 - File Type Counter
 - Image Organizer
 - Directory Tree Printer
