@@ -9,12 +9,12 @@ The repository is organized by topic, with each category focusing on a specific 
 # Topics Covered
 **Note:** A description for each script is provided at the very top of the script
 
-## filesystem
+## Filesystem
 
 ### Focus:
 - Working with files and directories using Python's `pathlib` and `shutil` modules.
 
-### Projects:
+### Scripts:
 - Directory Inspector  
 - File Type Counter
 - Image Organizer
@@ -22,3 +22,11 @@ The repository is organized by topic, with each category focusing on a specific 
 - Duplicate Finder
 - Backup Utility
 - Mini File Organizer
+
+## Text processing
+
+### Focus:
+- Working with text files using the python built-in file object
+
+### Scripts:
+- Word and Line Statistics
