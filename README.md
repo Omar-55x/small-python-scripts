@@ -12,7 +12,7 @@ The repository is organized by topic, with each category focusing on a specific 
 ## Filesystem
 
 ### Focus:
-- Working with files and directories using Python's `pathlib` and `shutil` modules.
+- Working with files and directories using `pathlib` and `shutil` modules.
 
 ### Scripts:
 - Directory Inspector  
@@ -27,6 +27,8 @@ The repository is organized by topic, with each category focusing on a specific 
 
 ### Focus:
 - Working with text files using the python built-in file object
+- Regular expressions using `re` module
 
 ### Scripts:
 - Word and Line Statistics
+- Batch Text Search
