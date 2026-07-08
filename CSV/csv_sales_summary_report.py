@@ -6,8 +6,8 @@
     1) Total records
     2) Total sales
     3) Average sales
-    4) Highest sale
-    5) Lowest sale
+    4) Best seller
+    5) Worst seller
 """
 
 from pathlib import Path
