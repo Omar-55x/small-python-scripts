@@ -32,3 +32,11 @@ The repository is organized by topic, with each category focusing on a specific 
 ### Scripts:
 - Word and Line Statistics
 - Batch Text Search
+
+## CSV
+
+### Focus:
+- Working with CSV files using `csv` module
+
+### Scripts:
+- CSV Sales Summary Report
