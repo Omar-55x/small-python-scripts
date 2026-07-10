@@ -61,15 +61,29 @@ def gather_students(path: Path) -> list[Student]:
 
     students = []
 
-    with path.open('r', encoding='utf-8') as csv_file:
+    with path.open('r', newline='', encoding='utf-8') as csv_file:
         csv_reader = csv.DictReader(csv_file)
 
-        if 'Name' not in csv_reader.fieldnames:
-            raise ValueError('\'Name\' field does not exist')
+        if csv_reader.fieldnames is None:                   # Check if file is empty
+            raise ValueError("The CSV file is empty.")
+        if 'Name' not in csv_reader.fieldnames:             # Check if the field 'Name' exists
+            raise ValueError('"Name" field does not exist')
+        if len(csv_reader.fieldnames) == 1:                 # Check if there are subject fiellds
+            raise ValueError('No subject fields found')
 
         for row in csv_reader:
             stud_name = row['Name']
-            stud_grades = {k:float(v) for k, v in row.items() if k != 'Name'}
+            stud_grades = {}
+
+            # Allow only float grades - for cases like: A, Very good,...
+            for subject, grade in row.items():
+                if subject == 'Name':
+                    continue
+                    
+                try:
+                    stud_grades[subject] = float(grade)
+                except ValueError:
+                    raise ValueError(f'Invalid grade for {stud_name} in {subject}')
 
             students.append(Student(
                 name=stud_name,
