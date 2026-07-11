@@ -1,4 +1,4 @@
-# About the repository
+# About this repository
 
 This repository contains a collection of Python automation scripts and mini-projects as I practice automation, data processing, and scripting.
 
@@ -43,3 +43,11 @@ The repository is organized by topic, with each category focusing on a specific 
 - CSV Sales Summary Report
 - CSV Product Filtering Tool
 - Student Grade Report
+
+## JSON
+
+### Focus:
+- Working with JSON files using `json` module
+
+### Scripts:
+- JSON <-> CSV Converter
