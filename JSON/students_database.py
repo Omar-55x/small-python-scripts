@@ -13,7 +13,7 @@ from pathlib import Path
 import json
 import secrets
 
-
+# Path validator
 def validate_path(prompt):
     while True:
         print('Even if the file does not exist yet, include "filename.json" at the end of the path')
@@ -36,6 +36,7 @@ def validate_path(prompt):
     return path
 
 
+# ID validator
 def validate_id():
     while True:
 
@@ -50,6 +51,78 @@ def validate_id():
             continue
     
         return student_id
+    
+# New student info validators
+def get_valid_name():
+    while True:
+        full_name = input('Full Name: ')
+
+        if not full_name:
+            print('Name can not be empty')
+            continue
+        if not full_name.isalpha():
+            print('Name can not include non-alphabetical characters')
+            continue
+
+        return full_name
+    
+def get_valid_age():
+    while True:
+        try:
+            age = int(input('Age: '))
+            if age < 0:
+                print('Age can not be negative')
+                continue
+        except ValueError:
+            print('Age has to be a number')
+            continue
+
+        if not age:
+            print('Age can not be empty')
+            continue
+
+        return age
+    
+def get_valid_year():
+    while True:
+        year = input('Year: ')
+
+        if not year:
+            print('Year can not be empty')
+            continue
+        if not year.isalnum():
+            print('Year can not include non-alphanumeric characters')
+            continue
+
+        return year
+
+def get_valid_subjects():
+    while True:
+        subjects = input('Subjects (separated by commas): ')
+        subjects_list = ''.join(subjects.strip().split()).split(',')     # split() --> split(',') removes spaces in between subjects
+
+        if not subjects:
+            print('Subjects can not be empty')
+            continue
+        for subject in subjects_list:
+            if not subject.isalpha():
+                print('Subejcts can not include non-alphabetical characters')
+                continue
+
+        return subjects_list
+    
+def get_valid_bool():
+    while True:
+        passed = input('Passed? (t --> true | f --> false): ').lower()
+
+        if passed in ('t', 'true', 'y', 'yes'):
+            return True
+        elif passed in ('f', 'false', 'n', 'no'):
+            return False
+        else:
+            print('Please write a valid status')
+            continue
+
 
 # Helper functions
 def load_students(path):
@@ -93,20 +166,14 @@ def make_student(path):
         if not any(new_student['student_id'] == student['student_id'] for student in students):
             break
 
-    new_student['full_name'] = input('Full Name: ')
-    new_student['age'] = input('Age: ')
-    new_student['year'] = input('Year: ')
-    new_student['subjects'] = ''.join(input('Subjects (separated by commas): ').strip().split()).split(',')     # Also removes spaces in between subjects
-    passed = input('Passed? (t --> true | f --> false): ').lower()
-    
-    if passed in ('t', 'true', 'y', 'yes'):
-        new_student['passed'] = True
-    elif passed in ('f', 'false', 'n', 'no'):
-        new_student['passed'] = False
-    else:
-        passed = None
+    new_student['full_name'] = get_valid_name()
+    new_student['age'] = get_valid_age()
+    new_student['year'] = get_valid_year()
+    new_student['subjects'] = get_valid_subjects()
+    new_student['passed'] = get_valid_bool()
 
     return new_student
+
 
 # Add the new student to the database
 def add_student(path, new_student):
@@ -134,6 +201,7 @@ def remove_student(path):
     print('No student found with the given ID number\n')
     return
 
+
 # Search for a student by ID
 def search_student(path):
 
@@ -147,6 +215,7 @@ def search_student(path):
     
     print('No student found with the given ID number')
     return
+
 
 def main():
 
