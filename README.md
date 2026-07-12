@@ -51,3 +51,4 @@ The repository is organized by topic, with each category focusing on a specific 
 
 ### Scripts:
 - JSON <-> CSV Converter
+- Students Database (with searching, adding, removing, capabilities)
