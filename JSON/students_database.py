@@ -1,10 +1,10 @@
 '''
 - This program stores students data into a JSON file
-- The program allows adding, deleting, and searching students
+- The program allows adding, updating, deleting, and searching students
 
 - How to run the program:
     - Enter a valid path including file name and .json extension (if it does not exist, a file with that name will be created)
-    - Enter the number of the operation you want to perform [1-4]
+    - Enter the number of the operation you want to perform [1-5]
     - Follow along with the requirements
     - Enter 'q' or 'Q' to exit the program
 '''
@@ -60,8 +60,8 @@ def get_valid_name():
         if not full_name:
             print('Name can not be empty')
             continue
-        if not full_name.isalpha():
-            print('Name can not include non-alphabetical characters')
+        if not all(char.isalpha() or char.isspace() for char in full_name):
+            print('Name can not contain non-alphabetical characters')
             continue
 
         return full_name
@@ -90,8 +90,8 @@ def get_valid_year():
         if not year:
             print('Year can not be empty')
             continue
-        if not year.isalnum():
-            print('Year can not include non-alphanumeric characters')
+        if not all(char.isalnum() or char.isspace() for char in year):
+            print('Year can not contain non-alphanumeric characters')
             continue
 
         return year
@@ -106,7 +106,7 @@ def get_valid_subjects():
             continue
         for subject in subjects_list:
             if not subject.isalpha():
-                print('Subejcts can not include non-alphabetical characters')
+                print('Subejcts can not contain non-alphabetical characters')
                 continue
 
         return subjects_list
@@ -183,6 +183,51 @@ def add_student(path, new_student):
     print(f'{new_student['full_name']} has been added to the database\n')
 
 
+# Update student's info
+def update_student(path):
+    student_id = validate_id()
+    students = load_students(path)
+
+    for student in students:
+        if student_id == int(student['student_id']):
+            while True:
+                print()
+                print(f'''What do you want to update for {student['full_name']}?
+1- Name
+2- Age
+3- Year
+4- Subjects
+5- Passing status\n''')
+                
+                command = input('Enter operation number (q to exit): ')
+                print()
+
+                match command:
+                    case '1':
+                        student['full_name'] = get_valid_name()
+                        save_students(path, students)
+                    case '2':
+                        student['age'] = get_valid_age()
+                        save_students(path, students)
+                    case '3':
+                        student['year'] = get_valid_year()
+                        save_students(path, students)
+                    case '4':
+                        student['subjects'] = get_valid_subjects()
+                        save_students(path, students)
+                    case '5':
+                        student['passed'] = get_valid_bool()
+                        save_students(path, students)
+                    case 'q' | 'Q':
+                        return
+                    case _:
+                        print('Invalid input\n')
+    
+    # If no matches are found
+    print('No student found with the given ID number\n')
+    return
+    
+
 # Remove an existing student by ID
 def remove_student(path):
 
@@ -197,7 +242,6 @@ def remove_student(path):
             print(f'{student['full_name']} has been removed from the database\n')
             return
     
-    # If no matching ID found
     print('No student found with the given ID number\n')
     return
 
@@ -221,13 +265,14 @@ def main():
 
     path = validate_path('Enter JSON file path: ')
 
-    print('''What operation do you want to perform?
+    while True:
+        print('''What operation do you want to perform?
 1- Get all students
 2- Search for a student by ID
 3- Add a new student
-4- Remove a student\n''')
+4- Update student\'s info
+5- Remove a student\n''')
 
-    while True:
         command = input('Enter operation number (q to exit): ')
         print()
 
@@ -240,6 +285,8 @@ def main():
                 new_student = make_student(path)
                 add_student(path, new_student)
             case '4':
+                update_student(path)
+            case '5':
                 remove_student(path)
             case 'q' | 'Q':
                 exit()
