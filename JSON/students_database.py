@@ -104,11 +104,18 @@ def get_valid_subjects():
         if not subjects:
             print('Subjects can not be empty')
             continue
+
+        valid = True
+
         for subject in subjects_list:
             if not subject.isalpha():
                 print('Subejcts can not contain non-alphabetical characters')
+                valid = False
                 continue
-
+        
+        if not valid:
+            continue
+        
         return subjects_list
     
 def get_valid_bool():
