@@ -7,7 +7,7 @@ The goal is to progressively develop practical skills by implementing small, foc
 The repository is organized by topic, with each category focusing on a specific area of Python automation. The exercises gradually increase in complexity, from small utility scripts to more complete projects.
 
 # Topics Covered
-**Note:** A description for each script is provided at the very top of the script.
+**Note:** A description for each script is provided at the very top of the script.  
 **Note:** Each topic builds on the previous topics. No scripts are limited to the focus of its topic only.
 
 ## Filesystem
