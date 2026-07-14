@@ -7,7 +7,8 @@ The goal is to progressively develop practical skills by implementing small, foc
 The repository is organized by topic, with each category focusing on a specific area of Python automation. The exercises gradually increase in complexity, from small utility scripts to more complete projects.
 
 # Topics Covered
-**Note:** A description for each script is provided at the very top of the script
+**Note:** A description for each script is provided at the very top of the script.
+**Note:** Each topic builds on the previous topics. No scripts are limited to the focus of its topic only.
 
 ## Filesystem
 
@@ -26,8 +27,8 @@ The repository is organized by topic, with each category focusing on a specific 
 ## Text processing
 
 ### Focus:
-- Working with text files using the python built-in file object
-- Regular expressions using `re` module
+- Working with text files using the python built-in file object.
+- Regular expressions using `re` module.
 
 ### Scripts:
 - Word and Line Statistics
@@ -37,7 +38,7 @@ The repository is organized by topic, with each category focusing on a specific 
 ## CSV
 
 ### Focus:
-- Working with CSV files using `csv` module
+- Working with CSV files using `csv` module.
 
 ### Scripts:
 - CSV Sales Summary Report
@@ -47,8 +48,17 @@ The repository is organized by topic, with each category focusing on a specific 
 ## JSON
 
 ### Focus:
-- Working with JSON files using `json` module
+- Working with JSON files using `json` module.
 
 ### Scripts:
 - JSON <-> CSV Converter
 - Students Database (with CRUD operations)
+
+## requests
+
+### Focus:
+- Working with APIS using `requests` module.
+- **Note:** `requests` is a third-party module. To install it, run: `pip install requests`.
+
+### Scripts:
+- Multi-API Country Analizer
