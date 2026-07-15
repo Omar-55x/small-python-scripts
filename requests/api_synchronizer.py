@@ -3,6 +3,8 @@
 1) Download and save the data as JSON
 2) On the next run, compare the new data with the saved data
 3) Report: new records, deleted records, and modified records
+
+- Note: make sure to insert an API that sends a reply with the fields "id" and "name"
 '''
 
 import requests
@@ -19,7 +21,7 @@ class Results:
     modified: list[str]
 
 
-API_URL = 'https://retoolapi.dev/lQowuf/data'
+API_URL = 'Insert_API'
 
 
 # Get snapshots path
