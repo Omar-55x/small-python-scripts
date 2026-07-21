@@ -63,3 +63,4 @@ The repository is organized by topic, with each category focusing on a specific 
 ### Scripts:
 - Multi-API Country Analizer
 - API Synchronizer
+- Products Data Pipeline
