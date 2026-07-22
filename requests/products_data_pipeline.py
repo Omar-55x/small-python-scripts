@@ -30,13 +30,13 @@ FIELD_NAMES = ('title', 'category', 'price', 'rating')
 API_URL = 'https://dummyjson.com/products'
 
 
-def fetch_products():
+def fetch_products() -> list[dict]:
     products_response = requests.get(API_URL, timeout=10)
     products_response.raise_for_status()
     return products_response.json()['products']
 
 
-def extract_fields(products):
+def extract_fields(products: list[dict]) -> list[dict]:
     extracted_products = []
 
     for product in products:
@@ -46,7 +46,7 @@ def extract_fields(products):
     return extracted_products
 
 
-def validate_path(prompt):
+def validate_path(prompt: str) -> Path:
     while True:
         path = Path(input(prompt).strip()).resolve().expanduser()
 
@@ -61,7 +61,7 @@ def validate_path(prompt):
 
 
 # Save products into a CSV file
-def write_csv(path, extracted_products):
+def write_csv(path: Path, extracted_products: list[dict]) -> None:
     csv_path = path / 'products.csv'
 
     with csv_path.open('w', newline='', encoding='utf-8') as f:
@@ -72,7 +72,7 @@ def write_csv(path, extracted_products):
             csv_writer.writerow(product)
 
 
-def calc_statistics(extracted_products):
+def calc_statistics(extracted_products: list[dict]) -> Results:
     category_statistics = {}
 
     highest_rating = max(extracted_products, key=lambda p: p['rating'])
@@ -116,7 +116,7 @@ def calc_statistics(extracted_products):
     )
 
 
-def write_summary(path, results):
+def write_summary(path: Path, results: Results) -> None:
     summary_path = path / 'summary.txt'
 
     with summary_path.open('w', newline='', encoding='utf-8') as f:
@@ -139,7 +139,7 @@ Highest-rated product: {results.highest_rating["title"]} (rating: {results.highe
 Lowest-rated product: {results.lowest_rating["title"]} (rating: {results.lowest_rating['rating']})''')
     
 
-def main():
+def main() -> None:
     try:
         products = fetch_products()
     except requests.exceptions.ConnectionError:
