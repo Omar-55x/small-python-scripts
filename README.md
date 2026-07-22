@@ -52,7 +52,7 @@ The repository is organized by topic, with each category focusing on a specific 
 
 ### Scripts:
 - JSON <-> CSV Converter
-- Students Database (with CRUD operations)
+- Students Database - Allows CRUD operations + user-friendly interface
 
 ## requests
 
@@ -64,3 +64,4 @@ The repository is organized by topic, with each category focusing on a specific 
 - Multi-API Country Analizer
 - API Synchronizer
 - Products Data Pipeline
+- API Cache
