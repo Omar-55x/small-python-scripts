@@ -1,10 +1,13 @@
 """
-Given a source directory, this program will organize the files into folders based on extension in these categories:
+- Given a source directory, this program will organize the files into folders based on extension in these categories:
 1) Images     2) Documents     3) Videos     4) Archives     5) Others
+
+- To run the program from the terminal enter: py (python3 for macOS/Linux) mini_file_organizer.py "{path}"
 """
 
 from pathlib import Path
 import shutil
+import argparse
 
 
 CATEGORY_DIRS = [
@@ -43,17 +46,6 @@ EXTENSIONS = {
     ".gz": "Archives",
 }
 
-def validate_path(prompt):
-    while True:
-        path = Path(input(prompt)).expanduser().resolve()
-
-        if not path.exists():
-            print(f'"{path}" does not exist')
-            continue
-        if not path.is_dir():
-            print(f'"{path}" is not a directory')
-            continue
-        return path
 
 # Make category directories
 def make_dirs(path):
@@ -88,7 +80,19 @@ def handle_duplicates(file_path, dest):
     file_path.rename(dest)
 
 def main():
-    path = validate_path('Enter folder path: ')
+    parser = argparse.ArgumentParser(
+        description='Organize files in folders based on the file extensions'
+    )
+
+    parser.add_argument('path', metavar='path', type=Path, help='The path of the folders to organize its files')
+    args = parser.parse_args()
+    path = args.path.expanduser().resolve()
+    
+    if not path.exists():
+        parser.error(f'{path} does not exist')
+    if not path.is_dir():
+        parser.error(f'{path} is not a folder')
+
     make_dirs(path)
     files = gather_files(path)
     move_files(files, path)
