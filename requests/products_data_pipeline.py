@@ -10,12 +10,15 @@
    3- The categories with the highest and lowest average rating.
 
 - API used: https://dummyjson.com/products
+
+- To use the program in the terminal run: py (python3 for macOS/Linux) products_data_pipeline.py "{path}"
 '''
 
 import requests
 from pathlib import Path
 import csv
 from dataclasses import dataclass
+import argparse
 
 
 @dataclass
@@ -44,20 +47,6 @@ def extract_fields(products: list[dict]) -> list[dict]:
         extracted_products.append(extracted_product)
 
     return extracted_products
-
-
-def validate_path(prompt: str) -> Path:
-    while True:
-        path = Path(input(prompt).strip()).resolve().expanduser()
-
-        if not path.exists():
-            print(f'{path} does not exist')
-            continue
-        if not path.is_dir():
-            print(f'{path} is not a folder')
-            continue
-
-        return path
 
 
 # Save products into a CSV file
@@ -140,6 +129,18 @@ Lowest-rated product: {results.lowest_rating["title"]} (rating: {results.lowest_
     
 
 def main() -> None:
+    parser = argparse.ArgumentParser(
+        description='Fetch products data, generate CSV, and write text summary'
+    )
+
+    parser.add_argument('path', type=Path, help='The folder path to save files in')
+    args = parser.parse_args()
+
+    path = args.path.expanduser().resolve()
+
+    if not path.is_dir():
+        parser.error(f'{path} is not an existing directory')
+
     try:
         products = fetch_products()
     except requests.exceptions.ConnectionError:
@@ -153,9 +154,10 @@ def main() -> None:
         return
     
     extracted_products = extract_fields(products)
-    path = validate_path('Enter folder path: ')
     write_csv(path, extracted_products)
     results = calc_statistics(extracted_products)
     write_summary(path, results)
 
-main()
+
+if __name__ == '__main__':
+    main()
