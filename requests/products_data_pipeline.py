@@ -1,5 +1,5 @@
 '''
-- A data pipeline that uses this workflow: API --> JSON --> Extract needed fields --> Save to CSV --> Write text summary
+- A data pipeline that uses this workflow: API --> JSON --> Extract needed fields --> Save to CSV --> Write text summary (Including logs)
 
 - In this case,
  the API will include information about different proudcts.
@@ -19,24 +19,31 @@ from pathlib import Path
 import csv
 from dataclasses import dataclass
 import argparse
+import logging
 
-
-@dataclass
-class Results:
-    highest_rating: dict
-    lowest_rating: dict
-    category_statistics: dict
-    highest_category: str
-    lowest_category: str
 
 FIELD_NAMES = ('title', 'category', 'price', 'rating')
 API_URL = 'https://dummyjson.com/products'
 
+@dataclass
+class Results:
+    category_statistics: dict
+    highest_category: str
+    lowest_category: str
+    highest_rating: dict
+    lowest_rating: dict
+
 
 def fetch_products() -> list[dict]:
+    logging.info('Fetching products from API')
+
     products_response = requests.get(API_URL, timeout=10)
     products_response.raise_for_status()
-    return products_response.json()['products']
+    products = products_response.json()['products']
+
+    logging.info('Retrieved %d products', len(products))
+
+    return products
 
 
 def extract_fields(products: list[dict]) -> list[dict]:
@@ -46,12 +53,15 @@ def extract_fields(products: list[dict]) -> list[dict]:
         extracted_product = {field: product[field] for field in FIELD_NAMES}
         extracted_products.append(extracted_product)
 
+    logging.info('Extracted %d products', len(extracted_products))
+
     return extracted_products
 
 
 # Save products into a CSV file
 def write_csv(path: Path, extracted_products: list[dict]) -> None:
     csv_path = path / 'products.csv'
+
 
     with csv_path.open('w', newline='', encoding='utf-8') as f:
         csv_writer = csv.DictWriter(f, fieldnames=FIELD_NAMES)
@@ -60,12 +70,11 @@ def write_csv(path: Path, extracted_products: list[dict]) -> None:
         for product in extracted_products:
             csv_writer.writerow(product)
 
+    logging.info('Wrote CSV to %s', csv_path)
+
 
 def calc_statistics(extracted_products: list[dict]) -> Results:
     category_statistics = {}
-
-    highest_rating = max(extracted_products, key=lambda p: p['rating'])
-    lowest_rating = min(extracted_products, key=lambda p: p['rating'])
 
     # Average price and rating per category
     for product in extracted_products:
@@ -84,6 +93,8 @@ def calc_statistics(extracted_products: list[dict]) -> Results:
         stats['rating_sum'] += product['rating']
         stats['count'] += 1
 
+    logging.info('Calculating statistics for %d categories', len(category_statistics))
+
     for category, stats in category_statistics.items():
         stats['avg_price'] = round(stats['prices_sum'] / stats['count'], 2)
         stats['avg_rating'] = round(stats['rating_sum'] / stats['count'], 2)
@@ -96,12 +107,15 @@ def calc_statistics(extracted_products: list[dict]) -> Results:
     highest_category = max(category_statistics, key=lambda category: category_statistics[category]['avg_rating'])
     lowest_category = min(category_statistics, key=lambda category: category_statistics[category]['avg_rating'])
 
+    highest_rating = max(extracted_products, key=lambda p: p['rating'])
+    lowest_rating = min(extracted_products, key=lambda p: p['rating'])
+
     return Results(
-        highest_rating=highest_rating,
-        lowest_rating=lowest_rating,
         category_statistics=category_statistics,
         highest_category=highest_category,
-        lowest_category=lowest_category
+        lowest_category=lowest_category,
+        highest_rating=highest_rating,
+        lowest_rating=lowest_rating
     )
 
 
@@ -126,6 +140,8 @@ Lowest rated category: {results.lowest_category} (average product rating: {resul
             
 Highest-rated product: {results.highest_rating["title"]} (rating: {results.highest_rating["rating"]})
 Lowest-rated product: {results.lowest_rating["title"]} (rating: {results.lowest_rating['rating']})''')
+
+    logging.info('Wrote summary to %s', summary_path)
     
 
 def main() -> None:
@@ -141,22 +157,37 @@ def main() -> None:
     if not path.is_dir():
         parser.error(f'{path} is not an existing directory')
 
+    log_path = path / 'products.log'
+
+    logging.basicConfig(
+    level=logging.INFO,
+    filename=log_path,
+    format='%(asctime)s  %(levelname)s:%(message)s'
+    )
+
+    logging.info('Program started')
+
     try:
         products = fetch_products()
     except requests.exceptions.ConnectionError:
-        print('Couldn\'t connect to the server')
+        logging.error('Couldn\'t connect to the server')
+        print('Couldn\'t connect to the server.')
         return
     except requests.exceptions.Timeout:
-        print('The request timed out')
+        logging.error('The request timed out')
+        print('The request timed out.')
         return
-    except requests.exceptions.RequestException as e:
-        print(f'Request failed: {e}')
+    except requests.exceptions.RequestException:
+        logging.exception('Request failed')
+        print('Request failed. See the log file for details.')
         return
     
     extracted_products = extract_fields(products)
     write_csv(path, extracted_products)
     results = calc_statistics(extracted_products)
     write_summary(path, results)
+
+    logging.info('Program completed successfully')
 
 
 if __name__ == '__main__':
