@@ -12,6 +12,7 @@
 from pathlib import Path
 import json
 import secrets
+import logging
 
 # Path validator
 def validate_path(prompt):
@@ -77,10 +78,6 @@ def get_valid_age():
             print('Age has to be a number')
             continue
 
-        if not age:
-            print('Age can not be empty')
-            continue
-
         return age
     
 def get_valid_year():
@@ -133,12 +130,19 @@ def get_valid_bool():
 
 # Helper functions
 def load_students(path):
-    with path.open('r', encoding='utf-8') as f:
-        return json.load(f)
+    try:
+        with path.open('r', encoding='utf-8') as f:
+            data = json.load(f)
+            logging.debug('Loaded JSON data')
+            return data
+    except json.JSONDecodeError:
+        logging.exception('Failed to parse JSON')
+        raise
     
 def save_students(path, students):
     with path.open('w', newline='', encoding='utf-8') as f:
         json.dump(students, f, indent=4)
+        logging.debug('Saved JSON data')
 
 def print_info(student):
     print(f'''Name: {student['full_name']}
@@ -159,6 +163,8 @@ def print_students(path):
     for student in students:
         print_info(student)
         print('---------------- \n')
+
+    logging.info('Displayed all students')
         
 
 # Make a new student Python dict --> JSON object
@@ -187,7 +193,8 @@ def add_student(path, new_student):
     students = load_students(path)
     students.append(new_student)
     save_students(path, students)
-    print(f'{new_student['full_name']} has been added to the database\n')
+    logging.info('Added student %s (%s)', new_student['full_name'], new_student['student_id'])
+    print(f'{new_student['full_name']} has been added to the database')
 
 
 # Update student's info
@@ -211,26 +218,50 @@ def update_student(path):
 
                 match command:
                     case '1':
+                        old_name = student['full_name']
                         student['full_name'] = get_valid_name()
                         save_students(path, students)
+                        logging.info('Updated %s: name from %s to %s',
+                            student['student_id'], old_name, student['full_name']
+                        )
                     case '2':
+                        old_age = student['age']
                         student['age'] = get_valid_age()
                         save_students(path, students)
+                        logging.info('Updated %s (%s): age from %d to %d',
+                             student['full_name'], student['student_id'], old_age, student['age']
+                        )
                     case '3':
+                        old_year = student['year']
                         student['year'] = get_valid_year()
                         save_students(path, students)
+                        logging.info('Updated %s (%s): year from %s to %s',
+                            student['full_name'], student['student_id'], old_year, student['year']
+                        )
                     case '4':
+                        old_subjects = student["subjects"].copy()
                         student['subjects'] = get_valid_subjects()
                         save_students(path, students)
+                        logging.info('Updated %s (%s): subjects from %s to %s',
+                            student['full_name'],
+                            student['student_id'],
+                            ', '.join(old_subjects),
+                            ', '.join(student['subjects'])
+                        )
                     case '5':
+                        old_state = student['passed']
                         student['passed'] = get_valid_bool()
                         save_students(path, students)
+                        logging.info('Updated %s (%s): state from %s to %s',
+                            student['full_name'], student['student_id'], old_state, student['passed']
+                        )
                     case 'q' | 'Q':
                         return
                     case _:
                         print('Invalid input\n')
     
     # If no matches are found
+    logging.warning('Student updating failed. ID: %s does not exist', student_id)
     print('No student found with the given ID number\n')
     return
     
@@ -246,9 +277,11 @@ def remove_student(path):
             students.remove(student)
             save_students(path, students)
 
+            logging.info('Removed Student %s (%s)', student['full_name'], student['student_id'])
             print(f'{student['full_name']} has been removed from the database\n')
             return
-    
+
+    logging.warning('Student deleting failed. ID: %s does not exist', student_id)
     print('No student found with the given ID number\n')
     return
 
@@ -261,9 +294,11 @@ def search_student(path):
 
     for student in students:
         if student_id == int(student['student_id']):
+            logging.info('Displayed student %s (%s)', student['full_name'], student['student_id'])
             print_info(student)
             return
-    
+
+    logging.warning('Student lookup failed. ID: %s does not exist', student_id)
     print('No student found with the given ID number')
     return
 
@@ -271,6 +306,14 @@ def search_student(path):
 def main():
 
     path = validate_path('Enter JSON file path: ')
+
+    logging.basicConfig(
+        level=logging.INFO,
+        filename=path.parent / 'students.log',
+        format='%(asctime)s  %(levelname)s:%(message)s'
+    )
+
+    logging.info('Program started. Database located at: %s', path)
 
     while True:
         print('''What operation do you want to perform?
@@ -296,6 +339,7 @@ def main():
             case '5':
                 remove_student(path)
             case 'q' | 'Q':
+                logging.info('Program terminated')
                 exit()
             case _:
                 print('Invalid input\n')
