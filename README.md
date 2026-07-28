@@ -65,3 +65,10 @@ The repository is organized by topic, with each category focusing on a specific 
 - API Synchronizer
 - Products Data Pipeline
 - API Cache
+
+## Other Modules
+- These are modules that does not have exercises specifically for them, but are used in many scripts.
+
+1) `argparse` - Used to parse command-line arguments.
+
+2) `logging` - Used to track and record events that occur while an application is running.
