@@ -62,7 +62,11 @@ def get_valid_age():
     
 def get_valid_grade():
     while True:
-        grade = int(input('Grade number: ').strip())
+        try:
+            grade = int(input('Grade number: ').strip())
+        except ValueError:
+            print('Grade has to be a number')
+            continue
 
         if not grade:
             print('Grade can not be empty')
@@ -129,8 +133,7 @@ def print_students(conn):
             cursor.execute("SELECT subject FROM students_subjects WHERE student_id = ?", (row[0],))
             subjects = cursor.fetchall()
 
-            print(row)
-            print('Subjects:', ', '.join(subject[0] for subject in subjects))
+            print_info(row, subjects)
             print()
 
         logging.info('Displayed all students')
@@ -140,7 +143,7 @@ def make_student(conn):
     with conn:
         cursor = conn.cursor()
         cursor.execute('SELECT student_id FROM students')
-        studnets_ids = {row[0] for row in cursor.fetchall()}
+        students_ids = {row[0] for row in cursor.fetchall()}
 
     new_student = {}
 
@@ -151,7 +154,7 @@ def make_student(conn):
         if len(str(new_student['student_id'])) != 8:        # for cases starting with 0 that will end up as 7-digit id
             continue
 
-        if new_student['student_id'] not in studnets_ids:
+        if new_student['student_id'] not in students_ids:
             break
 
     new_student['full_name'] = get_valid_name()
@@ -219,7 +222,7 @@ def update_student(conn):
                     old_name = student[1]
                     new_name = get_valid_name()
                     cursor.execute("UPDATE students SET full_name = ? WHERE student_id = ?", (new_name, student_id))
-                    conn.commit()
+
                     logging.info('Updated %s: name from %s to %s',
                         student_id, old_name, new_name
                     )
@@ -227,7 +230,7 @@ def update_student(conn):
                     old_age = student[2]
                     new_age = get_valid_age()
                     cursor.execute("UPDATE students SET age = ? WHERE student_id = ?", (new_age, student_id))
-                    conn.commit()
+
                     logging.info('Updated %s (%s): age from %d to %d',
                         student[1], student_id, old_age, new_age
                     )
@@ -235,7 +238,7 @@ def update_student(conn):
                     old_grade = student[3]
                     new_grade = get_valid_grade()
                     cursor.execute("UPDATE students SET grade = ? WHERE student_id = ?", (new_grade, student_id))
-                    conn.commit()
+
                     logging.info('Updated %s (%s): grade from %s to %s',
                         student[1], student_id, old_grade, new_grade
                     )
@@ -245,11 +248,9 @@ def update_student(conn):
                     new_subjects = get_valid_subjects()
 
                     cursor.execute("DELETE FROM students_subjects WHERE student_id = ?", (student_id,))
-                    conn.commit()
 
                     for subject in new_subjects:
                         cursor.execute("INSERT INTO students_subjects (student_id, subject) VALUES (?, ?)", (student_id, subject))
-                    conn.commit()
                     
                     logging.info('Updated %s (%s): subjects from %s to %s',
                         student[1], student_id, old_subjects, ', '.join(s for s in new_subjects))
@@ -257,7 +258,7 @@ def update_student(conn):
                     old_state = student[4]
                     new_state = get_valid_status()
                     cursor.execute("UPDATE students SET status = ? WHERE student_id = ?", (new_state, student_id))
-                    conn.commit()
+
                     logging.info('Updated %s (%s): state from %s to %s',
                         student[1], student_id, old_state, new_state
                     )
@@ -266,6 +267,27 @@ def update_student(conn):
                 case _:
                     print('Invalid input\n')
 
+
+# Remove an existing student by ID
+def remove_student(conn):
+    student_id = validate_id()
+
+    with conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM students WHERE student_id = ?", (student_id,))
+        student = cursor.fetchone()
+
+        if not student:
+            logging.warning('Student updating failed. ID: %s does not exist', student_id)
+            print('No student found with the given ID number\n')
+            return
+
+        cursor.execute("DELETE FROM students WHERE student_id = ?", (student_id,))
+
+    logging.info('Removed Student %s (%s)', student[1], student_id)
+    print(f'\n{student[1]} has been removed from the database\n')
+    return
+    
 
 # Search student by ID
 def search_student(conn):
@@ -320,6 +342,8 @@ def main():
     data_file = path / 'students.db'
     try:
         conn = sqlite3.connect(data_file)
+        conn.execute("PRAGMA foreign_keys = ON")
+
         with conn:
             cursor = conn.cursor()
             cursor.execute("""CREATE TABLE IF NOT EXISTS students (
@@ -333,7 +357,9 @@ def main():
             cursor.execute("""CREATE TABLE IF NOT EXISTS students_subjects (
             student_id INTEGER NOT NULL,
             subject TEXT NOT NULL,
-            FOREIGN KEY (student_id) REFERENCES students (student_id)
+            FOREIGN KEY (student_id)
+                REFERENCES students(student_id)
+                ON DELETE CASCADE
             );""")
     except sqlite3.OperationalError:
         logging.exception('Operational Error')
@@ -372,6 +398,8 @@ def main():
                 add_student(conn, new_student)
             case '4':
                 update_student(conn)
+            case '5':
+                remove_student(conn)
             case 'q' | 'Q':
                 logging.info('Program terminated')
                 conn.close()
