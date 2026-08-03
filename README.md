@@ -64,7 +64,14 @@ The repository is organized by topic, with each category focusing on a specific 
 - Multi-API Country Analizer
 - API Synchronizer
 - Products Data Pipeline
-- API Cache
+
+## sqlite3
+
+### Focus:
+- Working with relational databases using `sqlite3` module.
+
+### Scripts:
+- CRUD Rebuild (Re-implementation of the JSON > students_database.py script with `sqlite3`)
 
 ## Other Modules
 - These are modules that does not have exercises specifically for them, but are used in many scripts.
