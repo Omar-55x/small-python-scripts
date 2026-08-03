@@ -15,7 +15,23 @@ import sqlite3
 import secrets
 import logging
 
+
+
+def validate_id():
+    while True:
+
+        try:
+            student_id = int(input('Please provide student\'s ID number: '))
+        except ValueError:
+            print('ID has to be a number')
+            continue
+
+        if len(str(student_id)) != 8:
+            print('ID has to consist of 8 numbers')
+            continue
     
+        return student_id
+
 
 # student info validators
 def get_valid_name():
@@ -91,6 +107,16 @@ def get_valid_status():
             print('Please enter a valid status')
             continue
 
+
+# Helper function
+def print_info(student, subjects):
+    print(f'''Name: {student[1]}
+Age: {student[2]}
+Grade: {student[3]}
+Subjects: {', '.join(subject[0] for subject in subjects)}
+Status: {student[4]}\n''')
+    
+
 def print_students(conn):
     with conn:
         cursor = conn.cursor()
@@ -102,7 +128,7 @@ def print_students(conn):
             subjects = cursor.fetchall()
 
             print(row)
-            print('Subjects: ', ', '.join(subject[0] for subject in subjects))
+            print('Subjects:', ', '.join(subject[0] for subject in subjects))
             print()
 
         logging.info('Displayed all students')
@@ -153,6 +179,29 @@ def add_student(conn, new_student):
 
     logging.info('Added student %s (%s)', new_student['full_name'], new_student['student_id'])
     print(f'{new_student['full_name']} has been added to the database\n')
+
+
+# Search student by ID
+def search_student(conn):
+    student_id = validate_id()
+
+    with conn:
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT * FROM students WHERE student_id = ?", (student_id,))
+        student = cursor.fetchone()
+
+        cursor.execute("SELECT subject FROM students_subjects WHERE student_id = ?", (student_id,))
+        subjects = cursor.fetchall()
+
+        logging.info('Displayed student %s (%s)', student[1], student[0])
+        print()
+        print_info(student, subjects)
+        return
+
+    logging.warning('Student lookup failed. ID: %s does not exist', student_id)
+    print('No student found with the given ID number')
+    return
 
 
 def main():
@@ -229,6 +278,8 @@ def main():
                     else:
                         logging.exception('Non-identified error')
                         raise
+            case '2':
+                search_student(conn)
             case '3':
                 new_student = make_student(conn)
                 add_student(conn, new_student)
