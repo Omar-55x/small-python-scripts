@@ -97,12 +97,14 @@ def get_valid_subjects():
     
 def get_valid_status():
     while True:
-        status = input('Status? (t/true --> passed | f/false --> failed): ').strip().lower()
+        status = input('Status? (t --> passed | f --> failed | empty --> Not available): ').strip().lower()
 
         if status in ('t', 'true', 'y', 'yes'):
             return 'Passed'
         elif status in ('f', 'false', 'n', 'no'):
             return 'Failed'
+        elif status in ('d', 'default', ''):
+            return 'Not available'
         else:
             print('Please enter a valid status')
             continue
@@ -179,6 +181,90 @@ def add_student(conn, new_student):
 
     logging.info('Added student %s (%s)', new_student['full_name'], new_student['student_id'])
     print(f'{new_student['full_name']} has been added to the database\n')
+
+
+# Update student's info
+def update_student(conn):
+    student_id = validate_id()
+
+    with conn:
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT * FROM students WHERE student_id = ?", (student_id,))
+        student = cursor.fetchone()
+
+        cursor.execute("SELECT subject FROM students_subjects WHERE student_id = ?", (student_id,))
+        subjects = cursor.fetchall()
+
+        if not student:
+            logging.warning('Student updating failed. ID: %s does not exist', student_id)
+            print('No student found with the given ID number\n')
+            return
+
+
+        while True:
+            print()
+            print(f'''What do you want to update for {student[1]}?
+1- Name
+2- Age
+3- Year
+4- Subjects
+5- Status\n''')
+                
+            command = input('Enter operation number (q to exit): ')
+            print()
+            
+            match command:
+                case '1':
+                    old_name = student[1]
+                    new_name = get_valid_name()
+                    cursor.execute("UPDATE students SET full_name = ? WHERE student_id = ?", (new_name, student_id))
+                    conn.commit()
+                    logging.info('Updated %s: name from %s to %s',
+                        student_id, old_name, new_name
+                    )
+                case '2':
+                    old_age = student[2]
+                    new_age = get_valid_age()
+                    cursor.execute("UPDATE students SET age = ? WHERE student_id = ?", (new_age, student_id))
+                    conn.commit()
+                    logging.info('Updated %s (%s): age from %d to %d',
+                        student[1], student_id, old_age, new_age
+                    )
+                case '3':
+                    old_grade = student[3]
+                    new_grade = get_valid_grade()
+                    cursor.execute("UPDATE students SET grade = ? WHERE student_id = ?", (new_grade, student_id))
+                    conn.commit()
+                    logging.info('Updated %s (%s): grade from %s to %s',
+                        student[1], student_id, old_grade, new_grade
+                    )
+                case '4':
+                    old_subjects = ', '.join(subject[0] for subject in subjects)
+
+                    new_subjects = get_valid_subjects()
+
+                    cursor.execute("DELETE FROM students_subjects WHERE student_id = ?", (student_id,))
+                    conn.commit()
+
+                    for subject in new_subjects:
+                        cursor.execute("INSERT INTO students_subjects (student_id, subject) VALUES (?, ?)", (student_id, subject))
+                    conn.commit()
+                    
+                    logging.info('Updated %s (%s): subjects from %s to %s',
+                        student[1], student_id, old_subjects, ', '.join(s for s in new_subjects))
+                case '5':
+                    old_state = student[4]
+                    new_state = get_valid_status()
+                    cursor.execute("UPDATE students SET status = ? WHERE student_id = ?", (new_state, student_id))
+                    conn.commit()
+                    logging.info('Updated %s (%s): state from %s to %s',
+                        student[1], student_id, old_state, new_state
+                    )
+                case 'q' | 'Q':
+                    return
+                case _:
+                    print('Invalid input\n')
 
 
 # Search student by ID
@@ -284,6 +370,8 @@ def main():
             case '3':
                 new_student = make_student(conn)
                 add_student(conn, new_student)
+            case '4':
+                update_student(conn)
             case 'q' | 'Q':
                 logging.info('Program terminated')
                 conn.close()
