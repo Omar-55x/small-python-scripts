@@ -191,6 +191,11 @@ def search_student(conn):
         cursor.execute("SELECT * FROM students WHERE student_id = ?", (student_id,))
         student = cursor.fetchone()
 
+        if not student:
+            logging.warning('Student lookup failed. ID: %s does not exist', student_id)
+            print('\nNo student found with the given ID number\n')
+            return
+
         cursor.execute("SELECT subject FROM students_subjects WHERE student_id = ?", (student_id,))
         subjects = cursor.fetchall()
 
@@ -198,10 +203,6 @@ def search_student(conn):
         print()
         print_info(student, subjects)
         return
-
-    logging.warning('Student lookup failed. ID: %s does not exist', student_id)
-    print('No student found with the given ID number')
-    return
 
 
 def main():
