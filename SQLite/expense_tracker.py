@@ -10,6 +10,71 @@ import argparse
 from pathlib import Path
 import logging
 import sqlite3
+import secrets
+
+# Helper functions
+def get_valid_text(var):
+    while True:
+        text = input(f'{var}: ').strip()
+
+        if not text:
+            print(f'{var} can not be empty')
+            continue
+        if not all(char.isalpha() or char.isspace() for char in text):
+            print(f'{var} can not contain non-alphabetical characters')
+            continue
+
+        return text
+
+
+def show_expenses(conn):
+    with conn:
+        c = conn.cursor()
+        c.execute('SELECT * FROM expenses')
+        records = c.fetchall()
+
+        for record in records:
+            print(record)
+
+        logging.info('Displayed all expenses')
+
+
+def make_account(conn):
+    with conn:
+        c = conn.cursor()
+        c.execute("SELECT account_id FROM accounts")
+        accounts_ids = {row[0] for row in c.fetchall()}
+
+    new_account = {}
+
+    while True:
+            new_account['account_id'] = int(''.join(secrets.choice('0123456789') for _ in range(8)))
+    
+            if len(str(new_account['account_id'])) != 8:
+                continue
+    
+            if new_account['account_id'] not in accounts_ids:
+                break
+
+    new_account['name'] = get_valid_text('Name')
+    new_account['institution'] = get_valid_text('Institution')
+    new_account['type'] = get_valid_text('Type')
+
+    return new_account
+
+    
+
+def add_account(conn, new_account):
+    with conn:
+        c = conn.cursor()
+        c.execute("""INSERT INTO accounts
+        (account_id, name, institution, type)
+        VALUES
+        (?, ?, ?, ?)""",
+        (new_account['account_id'], new_account['name'], new_account['institution'], new_account['type']))
+
+        logging.info('New account: %s (%s) has been added to the database\n', new_account['name'], new_account['account_id'])
+        print(f'\n{new_account['name']} has been added to the database\n')
 
 
 def main():
@@ -76,17 +141,22 @@ def main():
     print()
     while True:
         print('''What operation do you want to perform?
-        1- View all expenses
-        2- Search an expense by category
-        3- Add an account
-        4- Add a category
-        5- Add an expense
-        6- Delete an expense''')
+1- View all expenses
+2- Search an expense by category
+3- Add an account
+4- Add a category
+5- Add an expense
+6- Delete an expense''')
 
-        command = input('Enter operation number (q to exit): ')
+        command = input('\nEnter operation number (q to exit): ')
         print()
 
         match command:
+            case '1':
+                show_expenses(conn)
+            case '3':
+                new_account = make_account(conn)
+                add_account(conn, new_account)
             case 'q' | 'Q':
                 logging.info('Program terminated')
                 conn.close()
