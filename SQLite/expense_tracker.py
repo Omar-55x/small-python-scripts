@@ -43,14 +43,31 @@ def get_valid_number(var):
 
 def show_expenses(conn):
     with conn:
+        conn.row_factory = sqlite3.Row
         c = conn.cursor()
-        c.execute('SELECT * FROM expenses;')
+        c.execute("""SELECT
+        e.expense_id,
+        a.name AS account,
+        e.title,
+        c.name AS category,
+        e.amount,
+        e.description
+        FROM expenses AS e
+        JOIN accounts AS a
+            ON e.account_id = a.account_id
+        JOIN categories AS c
+            ON e.category_id = c.category_id;""")
+
         records = c.fetchall()
 
         for record in records:
-            print(record)
+            print(f'''Expense ID: {record['expense_id']}
+Account: {record['account']}
+Title: {record['title']}
+Category: {record['category']}
+Amount: {record['amount']}$
+Description: {record['description']}\n\n''')
         
-        print()
         logging.info('Displayed all expenses;')
 
 
@@ -72,7 +89,7 @@ def make_account(conn):
                 break
 
     new_account['name'] = get_valid_text('Name')
-    new_account['institution'] = get_valid_text('Institution')
+    new_account['institution'] = input('Institution (leave empty if cash): ').strip()
     new_account['type'] = get_valid_text('Type')
 
     return new_account
@@ -163,7 +180,48 @@ def add_expense(conn, expense):
 
         logging.info('New expense: %s has been added', expense['title'])
         print(f'\n{expense['title']} has been added to the expenses\n')
-        
+
+
+def search_category(conn):
+    with conn:
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        c.execute("SELECT name FROM categories;")
+        categories = {row[0] for row in c.fetchall()}
+
+        category = get_valid_text('Category')
+
+        if category not in categories:
+            logging.warning('Category: %s not found', category)
+            print(f'No category found with the name "{category}"')
+            return
+
+        c.execute("SELECT category_id FROM categories WHERE name = ?", (category,))
+        category_id = c.fetchone()[0]
+
+        c.execute("""SELECT
+        e.expense_id,
+        a.name AS account,
+        e.title,
+        e.amount,
+        e.description
+        FROM expenses AS e
+        JOIN accounts as a
+            ON e.account_id = a.account_id
+        WHERE e.category_id = ?
+        ORDER BY e.amount;""", (category_id,))
+
+        records = c.fetchall()
+
+        print(f'\nRecords in {category} category:\n')
+
+        for record in records:
+            print(f'''Expense ID: {record['expense_id']}
+Account: {record['account']}
+Title: {record['title']}
+Amount: {record['amount']}$
+Description: {record['description']}\n\n''')
+
 
 def main():
     # Configure parser
@@ -243,6 +301,8 @@ def main():
         match command:
             case '1':
                 show_expenses(conn)
+            case '2':
+                search_category(conn)
             case '3':
                 new_account = make_account(conn)
                 add_account(conn, new_account)
