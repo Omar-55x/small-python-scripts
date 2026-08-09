@@ -11,6 +11,7 @@ from pathlib import Path
 import logging
 import sqlite3
 import secrets
+from datetime import datetime
 
 # Helper functions
 def get_valid_text(var):
@@ -26,23 +27,37 @@ def get_valid_text(var):
 
         return text
 
+def get_valid_number(var):
+    while True:
+        num = input(f'{var}: ').strip()
+
+        if not num:
+            print(f'{var} can not be empty')
+            continue
+        if not num.isnumeric():
+            print(f'{var} can only contain numbers')
+            continue
+
+        return num
+
 
 def show_expenses(conn):
     with conn:
         c = conn.cursor()
-        c.execute('SELECT * FROM expenses')
+        c.execute('SELECT * FROM expenses;')
         records = c.fetchall()
 
         for record in records:
             print(record)
-
-        logging.info('Displayed all expenses')
+        
+        print()
+        logging.info('Displayed all expenses;')
 
 
 def make_account(conn):
     with conn:
         c = conn.cursor()
-        c.execute("SELECT account_id FROM accounts")
+        c.execute("SELECT account_id FROM accounts;")
         accounts_ids = {row[0] for row in c.fetchall()}
 
     new_account = {}
@@ -70,12 +85,85 @@ def add_account(conn, new_account):
         c.execute("""INSERT INTO accounts
         (account_id, name, institution, type)
         VALUES
-        (?, ?, ?, ?)""",
+        (?, ?, ?, ?);""",
         (new_account['account_id'], new_account['name'], new_account['institution'], new_account['type']))
 
-        logging.info('New account: %s (%s) has been added to the database\n', new_account['name'], new_account['account_id'])
+        logging.info('New account: %s (%s) has been added to the database', new_account['name'], new_account['account_id'])
         print(f'\n{new_account['name']} has been added to the database\n')
 
+
+def add_category(conn):
+    with conn:
+        c = conn.cursor()
+        c.execute('SELECT name FROM categories;')
+        categories = {row[0] for row in c.fetchall()}
+
+        while True:
+            new_category = get_valid_text("New category name (q to exit)")
+            print()
+
+            if new_category in categories:
+                print('Category already exists')
+                continue
+            if new_category in ['q', 'Q']:
+                return
+            
+            c.execute("INSERT INTO categories (name) VALUES (?);", (new_category,))
+
+            logging.info('New category: %s has been created', new_category)
+            print(f'{new_category} category has been added to the database\n')
+
+            return
+
+
+def make_expense(conn):
+    expense = {}
+
+    with conn:
+        c = conn.cursor()
+
+        # Get account name - id
+        acc_name = get_valid_text('Account name associated with the expense')
+
+        c.execute("SELECT account_id FROM accounts WHERE name=?;", (acc_name,))
+        try:
+            expense['acc_id'] = c.fetchone()[0]
+        except TypeError:
+            print(f'No account found with the name "{acc_name}"')
+            logging.warning('No such account name: %s', acc_name)
+            raise TypeError
+
+        # Get category name - id
+        category_name = get_valid_text('Category')
+
+        c.execute("SELECT category_id FROM categories WHERE name=?;", (category_name,))
+        try:
+            expense['category_id'] = c.fetchone()[0]
+        except TypeError:
+            print(f'No category found with the name "{category_name}"\nPlease make the category first or choose an existing category')
+            logging.warning('No such category: %s', category_name)
+            raise TypeError
+
+        expense['title'] = get_valid_text('Title')
+        expense['amount'] = get_valid_number('Amount')
+        expense['description'] = input('Description (enter for no description): ').strip()
+        expense['expense_date'] = datetime.now().isoformat()
+
+    return expense
+
+
+def add_expense(conn, expense):
+    with conn:
+        c = conn.cursor()
+        c.execute("""INSERT INTO expenses
+        (account_id, category_id, title, amount, description, expense_date)
+        VALUES
+        (?,?,?,?,?,?);""",
+        (expense['acc_id'], expense['category_id'], expense['title'], expense['amount'], expense['description'], expense['expense_date']))
+
+        logging.info('New expense: %s has been added', expense['title'])
+        print(f'\n{expense['title']} has been added to the expenses\n')
+        
 
 def main():
     # Configure parser
@@ -124,12 +212,13 @@ def main():
             account_id INTEGER NOT NULL,
             category_id INTEGER NOT NULL,
 
+            title TEXT NOT NULL,
             amount REAL NOT NULL,
             description TEXT,
             expense_date TEXT NOT NULL,
 
             FOREIGN KEY (account_id) REFERENCES accounts(account_id),
-            FOREIGN KEY (category_id) REFERENCES caregories(category_id)
+            FOREIGN KEY (category_id) REFERENCES categories(category_id)
             );""")
     except sqlite3.OperationalError:
         logging.exception('Operational Error')
@@ -142,7 +231,7 @@ def main():
     while True:
         print('''What operation do you want to perform?
 1- View all expenses
-2- Search an expense by category
+2- Search expenses by category
 3- Add an account
 4- Add a category
 5- Add an expense
@@ -157,6 +246,15 @@ def main():
             case '3':
                 new_account = make_account(conn)
                 add_account(conn, new_account)
+            case '4':
+                add_category(conn)
+            case '5':
+                try:
+                    expense = make_expense(conn)
+                except TypeError:
+                    return
+                
+                add_expense(conn, expense)
             case 'q' | 'Q':
                 logging.info('Program terminated')
                 conn.close()
