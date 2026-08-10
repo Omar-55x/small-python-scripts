@@ -10,7 +10,6 @@ import argparse
 from pathlib import Path
 import logging
 import sqlite3
-import secrets
 from datetime import datetime
 
 # Helper functions
@@ -27,23 +26,25 @@ def get_valid_text(var):
 
         return text
 
-def get_valid_number(var):
+def get_valid_amount():
     while True:
-        num = input(f'{var}: ').strip()
+        amount = input('Amount: ').strip()
 
-        if not num:
-            print(f'{var} can not be empty')
-            continue
-        if not num.isnumeric():
-            print(f'{var} can only contain numbers')
-            continue
+        try:
+            amount = float(amount)
 
-        return num
+            if amount <= 0:
+                print('Amount must be greater than zero')
+                continue
+
+            return amount
+
+        except ValueError:
+            print('Please enter a valid number')
 
 
 def show_expenses(conn):
     with conn:
-        conn.row_factory = sqlite3.Row
         c = conn.cursor()
         c.execute("""SELECT
         e.expense_id,
@@ -71,23 +72,8 @@ Description: {record['description']}\n\n''')
         logging.info('Displayed all expenses;')
 
 
-def make_account(conn):
-    with conn:
-        c = conn.cursor()
-        c.execute("SELECT account_id FROM accounts;")
-        accounts_ids = {row[0] for row in c.fetchall()}
-
+def make_account():
     new_account = {}
-
-    while True:
-            new_account['account_id'] = int(''.join(secrets.choice('0123456789') for _ in range(8)))
-    
-            if len(str(new_account['account_id'])) != 8:
-                continue
-    
-            if new_account['account_id'] not in accounts_ids:
-                break
-
     new_account['name'] = get_valid_text('Name')
     new_account['institution'] = input('Institution (leave empty if cash): ').strip()
     new_account['type'] = get_valid_text('Type')
@@ -100,12 +86,12 @@ def add_account(conn, new_account):
     with conn:
         c = conn.cursor()
         c.execute("""INSERT INTO accounts
-        (account_id, name, institution, type)
+        (name, institution, type)
         VALUES
-        (?, ?, ?, ?);""",
-        (new_account['account_id'], new_account['name'], new_account['institution'], new_account['type']))
+        (?, ?, ?);""",
+        (new_account['name'], new_account['institution'], new_account['type']))
 
-        logging.info('New account: %s (%s) has been added to the database', new_account['name'], new_account['account_id'])
+        logging.info('New account: %s has been added to the database', new_account['name'])
         print(f'\n{new_account['name']} has been added to the database\n')
 
 
@@ -143,26 +129,30 @@ def make_expense(conn):
         acc_name = get_valid_text('Account name associated with the expense')
 
         c.execute("SELECT account_id FROM accounts WHERE name=?;", (acc_name,))
-        try:
-            expense['acc_id'] = c.fetchone()[0]
-        except TypeError:
+        row = c.fetchone()
+
+        if row is None:
             print(f'No account found with the name "{acc_name}"')
             logging.warning('No such account name: %s', acc_name)
-            raise TypeError
+            return None
+        
+        expense['acc_id'] = row[0]
 
         # Get category name - id
         category_name = get_valid_text('Category')
 
         c.execute("SELECT category_id FROM categories WHERE name=?;", (category_name,))
-        try:
-            expense['category_id'] = c.fetchone()[0]
-        except TypeError:
+        row = c.fetchone()
+
+        if row is None:
             print(f'No category found with the name "{category_name}"\nPlease make the category first or choose an existing category')
             logging.warning('No such category: %s', category_name)
-            raise TypeError
+            return None
+        
+        expense['category_id'] = row[0]
 
         expense['title'] = get_valid_text('Title')
-        expense['amount'] = get_valid_number('Amount')
+        expense['amount'] = get_valid_amount()
         expense['description'] = input('Description (enter for no description): ').strip()
         expense['expense_date'] = datetime.now().isoformat()
 
@@ -184,7 +174,6 @@ def add_expense(conn, expense):
 
 def search_category(conn):
     with conn:
-        conn.row_factory = sqlite3.Row
         c = conn.cursor()
         c.execute("SELECT name FROM categories;")
         categories = {row[0] for row in c.fetchall()}
@@ -222,6 +211,32 @@ Title: {record['title']}
 Amount: {record['amount']}$
 Description: {record['description']}\n\n''')
 
+        logging.info('Displayed all expenses in %s category', category)
+
+
+def delete_expense(conn):
+    with conn:
+        c = conn.cursor()
+        c.execute("SELECT expense_id FROM expenses;")
+        ids = {row[0] for row in c.fetchall()}
+
+        expense_id = input('Expense ID: ')
+
+        try:
+            expense_id = int(expense_id)
+        except ValueError:
+            print('Expense ID must be a number')
+            return
+
+        if expense_id not in ids:
+            logging.warning('No expense found with the ID %d', expense_id)
+            print(f'No expense found with the ID {expense_id}')
+            return
+
+        c.execute("DELETE FROM expenses WHERE expense_id = ?", (expense_id,))
+        logging.info('Deleted expense. ID: %d', expense_id)
+        print(f'\nExpense {expense_id} was deleted successfully\n')
+
 
 def main():
     # Configure parser
@@ -249,24 +264,25 @@ def main():
     data_file = path / 'expense_tracker.db'
     try:
         conn = sqlite3.connect(data_file)
+        conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON")
 
         with conn:
             c = conn.cursor()
             c.execute("""CREATE TABLE IF NOT EXISTS accounts(
             account_id INTEGER PRIMARY KEY,
-            name TEXT NOT NULL,
+            name TEXT NOT NULL UNIQUE,
             institution TEXT,
             type TEXT NOT NULL
             );""")
 
             c.execute("""CREATE TABLE IF NOT EXISTS categories(
-            category_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL
+            category_id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL UNIQUE
             );""")
 
             c.execute("""CREATE TABLE IF NOT EXISTS expenses(
-            expense_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            expense_id INTEGER PRIMARY KEY,
             account_id INTEGER NOT NULL,
             category_id INTEGER NOT NULL,
 
@@ -309,12 +325,12 @@ def main():
             case '4':
                 add_category(conn)
             case '5':
-                try:
-                    expense = make_expense(conn)
-                except TypeError:
-                    return
-                
-                add_expense(conn, expense)
+                expense = make_expense(conn)
+
+                if expense is not None:
+                    add_expense(conn, expense)
+            case '6':
+                delete_expense(conn)
             case 'q' | 'Q':
                 logging.info('Program terminated')
                 conn.close()
