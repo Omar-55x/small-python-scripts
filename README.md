@@ -72,6 +72,7 @@ The repository is organized by topic, with each category focusing on a specific 
 
 ### Scripts:
 - CRUD Rebuild (Re-implementation of the JSON > students_database.py script with `sqlite3`)
+- Expense Tracker
 
 ## Other Modules
 - These are modules that does not have exercises specifically for them, but are used in many scripts.
